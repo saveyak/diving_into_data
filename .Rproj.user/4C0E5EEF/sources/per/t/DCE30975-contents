@@ -1,0 +1,468 @@
+####Useful libraries####
+library(ggplot2)  #Other standards: dplyr, aptheme, lubridate
+install.packages('tidyverse')
+library(DT) #Create searchable datatable
+datatable(mtcars)
+library(ggplot2)
+library(tidyverse)
+library(aptheme)
+library(readxl)
+library(readr)
+
+####Miscellaneous####
+setwd("~/projects/learn-r-journalism") #For Mac. getwd() to get working directory
+x <- rnorm(100) #Create random sample of 100
+list.files("./data/source/","oct-20") #List all files that start with oct-20 within filepath data/source
+
+# Connect to AP Core Datasets
+remotes::install_git("https://gitlab.inside.ap.org/newsapps/ap-core-datasets-r.git")
+library(apCoreDatasets)
+list_tables()
+get_table("ACS_5yr_demos_wide", "2022.5.6")
+
+
+####Exploring the dimensions of your data####
+range(mtcars$mpg) #find range of data
+count(df, state) #counts of each state. table(df$state) presents same thing as a table.
+length(x) #find number of items in something
+nchars(x) #find number of characters in string
+glimpse(x) #tidyverse function, see preview of each variable. str(x) very similar
+ncol(x) #number of columns, rows is nrow(x)
+dim(x) #Dimensions of X -- will give you # of rows x columns
+levels(df$race) #See how categorical variables, i.e. factors, are ordered
+summary(mtcars) #Gives you min/max/mean/median/quartiles of each variable
+colnames(mtcars) #Get names of columns
+length(unique(murders$MSA_label)) #find number of unique values
+subset(df,duplicated(var1)) %>% View() #Look at any duplicated values
+df = df[,which(!duplicated(names(df)))] #Include only unduplicated columns
+
+####Create your own function, For loops####
+percent_change <- function(first_number, second_number) {
+  pc <- (second_number-first_number)/first_number*100
+  return(pc)
+}
+percent_change(100,150)
+
+#For loops
+
+races = c("HI", "AM", "AS", "HP", "WH", "TR", "BL")
+
+for (race in races) {
+  male = paste0("SCH_ENR_",race,"_M")
+  female = paste0("SCH_ENR_",race,"_F")
+  col_name = paste0(race,"_enr")
+  df[col_name] = df[male] + df[female]
+}
+
+####Slicing and dicing: Create dataframe and grab specific columns/rows####
+patientID <- c(111, 208, 113, 408, 504, 609)
+age <- c(25, 34, 28, 52, 18, 87)
+sex <- c(1,2,1,1, 2, 1)
+diabetes <- c("Type1", "Type2", "Type1", "Type1", "Type2", "Type2")
+status <- c(1,2,3,1,3,2)
+patientdata <- data.frame(patientID, age, sex, diabetes, status)
+
+patientdata[1:3] #Columns 1-3
+patientdata[2:3, 1:2] #Rows 2-3, columns 1-2
+patientdata[c(1,3),1:2] #Rows 1 and 3 and columns 1-2
+patientdata[,2] #All of column 2. Same as patientdata$age
+patientdata[patientdata$patientID == 408, "sex"] #Grab one cell in the data
+
+#Using slice from dplyr
+slice(patientdata, 1:3) #Grab rows 1-3. Same as: patientdata %>% slice(1:3)
+slice_head(patientdata, n=2) #Grab first two rows.
+slice_tail(patientdata, n=2) #Grab last two rows.
+slice_min(patientdata, age, prop=0.5) #Grab the 50% of rows with lowest values
+slice_max(patientdata, age, prop=0.5) #Grab the 50% of rows with the highest values
+slice_sample(patientdata, n=2) #Pick two rows at random. Use prop=0.5 to select 50% of rows.
+group_by(category) %>% slice_sample(n=4) #Sample four from each category
+
+####Loading/reading/writing/saving data####
+#This assumes you loaded readr and readxl
+read_csv() #base R is read.csv(), specifying stringsAsFactors=F
+write_csv(df, "data/savehere.csv", na="replacenaswiththis")
+df = read_excel('bla.xls', sheet=1) #skip=2 to skip first 2 rows
+#read files with other delimiters
+read_tsv("data/Employee_Payroll_Tab.txt")
+read_delim("data/Employee_Payroll_Pipe.txt", delim="|")
+read_fwf() #Fixed-width files -- these are tricky, see documentation
+#Reading JSONs:
+library(jsonlite)
+fromJSON("blabla.json")
+#Copy and paste data with datapasta. See https://learn.r-journalism.com/en/importing_exporting/copying_pasting/copying-pasting/
+#Append a folder of CSV or Excel files with bulk_csv / bulk_excel from muckrakr
+#https://github.com/andrewbtran/muckrakr
+
+####Cleaning data (rename columns, clean strings, dates)####
+
+#Convert all columns from 3 to the end from character to numeric:
+df = df %>% mutate_at(c(3:ncol(df)), as.numeric)
+#Convert all characters to numeric
+df %>% mutate_if(is.character, as.numeric)
+
+#Renaming columns
+colnames(df) = make.names(colnames(df)) %>%
+  str_replace_all("\\.+", "_") #Replace all spaces with periods, then periods with _
+df = rename(df, newname1=oldname1, newname2=oldname2) #Can also use select to rename, see below
+
+#Change a single value in a dataframe
+#myDataFrame["rowName", "columnName"] <- value
+schools_21[schools_21$SCH_ID==130255002646, "School Name"] = "Northbrook Center"
+
+
+#Clean up strings with stringr functions
+df$NCES_code = str_pad(df$NCES_code, 7, pad = "0") #fill in leading zeroes
+str_length()  #find length of string
+str_c("one", "two", sep="-") #Concatenate strings
+ids_combined=str_c(number, collapse="-") #IDs will be combined with hyphens in between
+str_detect()	#detect string in string
+str_match()	#does string match
+str_count()	#count strings
+str_split()	#split strings
+str_to_upper()	#convert string to upper case. str_to_lower() lowercase, str_to_title() title case
+str_trim("   bla bla   ", side="left")	#eliminate trailing white space. Default is "both"
+str_replace_all(x, "[aeiou]", "-") #Replaces all vowels with hyphens. Str_replace would replace only first instance in a string.
+flights %>% mutate(origin = str_replace_all(origin, c(
+  "^EWR$" = "Newark International Airport", #Regex: EWR must be the whole string
+  "^JFK$" = "John F. Kennedy Aiport"
+))) #Multiple replace-alls
+str_squish("   weird   text like    this    ") #remove all unnecessary whitespace
+
+#Split column X5.6 into two columns named X5 and X6 based on space as a separator
+df %>% separate(X5.6, c("X5", "X6"), " ")
+
+#Split string into columns based on regular expressions
+airlines %>% extract(name, into=c("short_name", "remainder"),
+                     regex = "^([^\\s]+) (.*)$", #\\s is whitespace character
+                     remove=FALSE) #keep original column
+
+text = "Hello world!"
+str_sub(text, start=7) = "Amy" #Grab string starting at char 7. End = end at char 7. Replace with Amy.
+str_replace(text,"[:alpha:].+ ", "Greetings, ") #Use regex
+str_sub(tn$`School Year`, 1, 4) #grab first four characters of "School Year"
+
+#Deal with messy numbers with readr
+options(scipen = 999) #Remove scientific notation
+options(scipen=0) #Reactive scientific notation
+messy=c("$5.00", "9,443,000","80","135","x","Cost: $12.75 USD","X")
+parse_number(messy, na=c("x","X"))
+
+
+
+####Deal with dates with lubridate####
+data <- data.frame(name=c("Charlie", "Lucy", "Pepper"), birthday=c("10-31-06", "2/4/2007", "June 1, 2005"))
+data$DOB <- mdy(data$birthday) #mdy() formats the date as month-day-year.
+#There's also ymd(), ydm(), hms(), ymd_hms() etc. Can set tz="UTC" for timezone
+year(data$DOB) #grab year of the date
+data$weekday <- wday(data$DOB, label=TRUE, abbr=FALSE) #grab day of week
+#There's also month(), week(), day of year/month/week yday(), mday(), wday(),hour(), minute(), second(), tz() for timezone
+today <- now() #gives something like "2022-06-27 13:34:57 CDT"
+data$age <- difftime(today, data$DOB) #gives days by default
+data$age_years <- as.numeric(data$age) / 365.25 #.25 because of leap years
+
+
+####Convert to string / factor / numeric####
+as.character(sample_df$race)
+factor(sample_df$name)
+as.numeric(sample_df$id)
+#to convert factor to numeric, must convert to character first
+as.numeric(as.character(sample_df$id))
+
+####Dealing with NAs####
+max(j, na.rm=T) #Find maximum value of j, removing NAs)
+is.na(x) #looks for null values
+!is.na(x) #looks for non-null values
+df_xl <- filter(df_xl, !is.na(Year)) #Remove na's (part of dplyr)
+df %>% drop_na(`NCES Code`) #Drop any row with NA for "NCES CODE" column
+df[ df == "foo" ] <- NA #Replace all instances of a string with NA
+df[complete.cases(df), ] #Remove rows that have any NA's
+df[!complete.cases(df), ] #Check if any rows have any NA's
+
+#Use if_all to filter any row in columns 16-169 that does not have an NA or a number
+df_complete = df %>%
+  filter(if_all(16:169,  ~ is.na(.x)|str_detect(.x, "^[0-9]+(\\.[0-9]+)?$"))) %>%
+  type.convert(as.is = TRUE)
+
+filter()
+select()
+arrange()
+mutate()
+summarize() plus group_by()
+
+####Filter/select/arrange/mutate/summarize/group_by####
+#Note use of DOUBLE EQUAL SIGNS
+#& is 'and', | is 'or'
+filter(murders, relat=="Husband", VicAge > 60 & Year==2016) #Can replace & with comma
+filter(murders, relat %in% c("Husband", "Boyfriend") | Circumstance_label=="Lovers triangle")
+filter(murders, 1980 < year, year < 1990) #Can't write 1980<year<1990)
+filter(if_all(starts_with("Total_Students"), ~ .x > 100)) #Filter on columns that start with "Total Students" and have at least a value of 101
+#Can also do if_any
+flights %>% group_by(carrier) %>% filter(n() >=10000) %>% ungroup() #Filter out groups with a count of less than 10,000
+select(df1, State, Agency, Solved_label, Year) #Select four columns from df1
+select(df1, OffAge:OffRace_value) #Select all columns from OffAge to OffRace_value
+select(df2, -Weapon_label) #Select all except Weapon_label
+select(murders, contains("_label")) #Selecg only cols that include _label
+select(df, State, newcol=oldcol) #Use select to rename
+#Arrange murders dataframe by victim age, then offender age (descending)
+arrange(murders, VicAge, desc(OffAge))  #Can also write -OffAge
+#Create new columns with mutate. Use case_when to assign labels.
+murders_ver3 <- mutate(murders,
+                       age_difference=OffAge-VicAge, #new col based on age difference
+                       vic_category=case_when(
+                         VicRace_label == "White" ~ "White",
+                         VicRace_label != "White" ~ "Non-White"
+                       ))
+#Create your own summary of the data
+summarize(murders,
+          first=min(Year),
+          last=max(Year),
+          metro_areas=n_distinct(MSA_label),
+          cases=n())
+#Same as above, but now you see info for every metro area
+murders %>% group_by(MSA_label) %>%
+  summarize(first=min(Year), last=max(Year), cases=n())
+#Useful summary functions: n(), n_distict(), first(), last(), nth()
+#abs(), max(), min(), sum(), range(), quantile(), sd(), median(), mean()
+#Pipe shortcut on Mac: Cmd + Shift + M
+#Find number of murders each year in DC and compare to previous year
+filter(murders, State=="District of Columbia") %>%
+  group_by(Year) %>%
+  summarize(total=n()) %>%
+  mutate(previous_year=lag(total)) %>%  #Gives you value from last row
+  mutate(change=total-previous_year)
+#All on 1 line: mutate(previous_year=lag(total), change=previous_year-total)
+
+
+####Tidying data with spread, gather or pivot_wider/pivot_longer####
+
+#Use SPREAD() for tall to wide
+df %>% spread(key=data, value=amount)
+#KEY: Column that will go wide into several colums. EG: "Race" col will turn into "Black", "White", etc.
+#VALUE: What will get filled in the rows under the Column. EG: Percent of unsolved cases for each race
+spread(key=VicRace_label, value=percent_unsolved)
+
+#Use GATHER() for wide to tall
+df %>% gather(key="name", value="name", 2:4)
+#KEY is name of new column made from collapsing colums 2-4
+#VALUE is name of the new column that will contain the values
+#Can also collapse columns by name, e.g. "colA:colZ"
+gather(key="Race", value="Percent_Unsolved", 2:6)
+
+#Alternatively, use pivot_longer() and pivot_wider()
+pivot_longer(cols=colA:colZ, names_to="category",values_to="value")
+pivot_winder(names_from="category", values_from="value")
+
+#### Sum by column or by row ####
+
+#Sum up a column
+df[14,] = list(year_by_fall_date,"k_12_total", sum(df$private_enrollment))
+#Sum up rows
+ct['k_12_total'] = rowSums(ct[,2:16])
+
+####Joins####
+
+left_join(race_percent, race_cases, by="Metro", suffix = c(".x", ".y"))
+#There is also right_join(), full_join(), inner_join()
+
+####ggplot2####
+
+#See examples of different graphs here: https://www.data-to-viz.com/
+
+#Scatterplot
+ggplot(data=ages) +
+  geom_point(mapping=aes(x=actor_age, y=actress_age)) +
+  expand_limits(x = 0, y = 0) + #Start at 0,0
+  geom_abline(intercept=0, col="light gray")
+
+#Other aesthetics: position, size, color, shape, transparency, fill
+
+#Bar charts
+#Common options: width, fill, color (border), position_dodge()
+#Basic bar chart
+ggplot(ages, aes(x=actor)) +
+  geom_bar()
+
+#Stacked bar chart
+ggplot(data=ages, aes(x=actor, fill=Genre)) +
+  geom_bar()
+
+#Grouped bar plot
+ggplot(data=ages, aes(x=actor, fill=Genre)) +
+  geom_bar(position="dodge")
+
+#Fixed scale stacked bar chart (everything reaches 100%)
+ggplot(data=ages,
+       aes(x=actor, fill=Genre)) +
+  geom_bar(position="fill")
+
+#Flip bar plot
+ggplot(data = avg_age, aes(x= actor, y=average_age_diff)) +
+  geom_bar(stat="identity") + #Identity means it equals the value of the y variable, not the count
+  coord_flip()
+
+#Boxplot: geom_boxplot()
+#Violin plot:geom_violin()
+#Histograms
+#Can either set width of the bins with binwidth [more narrow = more bins], or number of bins with bins (default is 30)
+
+geom_histogram(binwidth=1)
+
+#Add a vertical line to mark the average
+geom_histogram(bins=20, color="black", fill="gray") +
+  geom_vline(aes(xintercept=mean(weight)), linetype="dashed", size=0.6)
+
+#Overlapping density plots with averages labeled:
+averages = districts %>% filter(!is.na(remote_status)) %>%
+  group_by(remote_status) %>%
+  summarise(avg_math_loss = mean(all_mth1922))
+
+districts %>% filter(!is.na(remote_status)) %>%
+  ggplot(aes(x=all_mth1922, y=..count..)) +
+  geom_density(aes(fill=remote_status), alpha=0.4)+
+  geom_vline(aes(xintercept=avg_math_loss, color=remote_status), data=averages, linetype="dashed") +
+  geom_label_repel(data = averages, aes(x = avg_math_loss, y=2000, label = round(avg_math_loss,2)))
+
+#Use scale_fill_manual to change the fill color
+
+#Ridgeline plots: use the ggridges library
+library(ggridges)
+theme_set(theme_ridges())
+ggplot(iris, aes(x=Sepal.Length, y=Species)) +
+  geom_density_ridges(aes(fill=Species), scale=2, alpha=0.4)
+#Higher scale number = closer together
+
+#Dot plot: geom_point()
+#Line plot/line chart, with points at each node:
+geom_line() + geom_point()
+#Scatterplot with fit:
+geom_point() +
+  geom_smooth()
+
+#Facets/small multiples
+ggplot(data=ages) +
+  geom_point(mapping=aes(x=actor_age, y=actress_age)) +
+  expand_limits(x = 0, y = 0) +
+  geom_abline(intercept=0, col="light gray") +
+  facet_grid(Genre~actor) #One square for each combo of genre and actor
+
+#Other options
+facet_grid(. ~ actor) #just columns
+facet_grid(actor ~ .) #just rows
+facet_wrap(~ var, ncol=4) #one classification variable wrapped to fill page
+
+#Set aes() is ggplot and it will be global. Set aes() on another layer and it applies only to that layer.
+
+#Facets, with one actor highlighted in each grid, the rest in gray
+
+ages_copy <- ages %>% select(-actor)
+ggplot(data=ages,
+       aes(x=actor_age,
+           y=actress_age,
+           color=actor)) +
+  geom_point(data=ages_copy, color="grey") +
+  geom_point() +
+  facet_wrap(~actor) +
+  theme(legend.position="none") # This removes the legend
+
+#Reorder chart labels
+
+library(forcats)
+ggplot(ages,
+       aes(x=actress_age, y=fct_reorder(Movie, actress_age, desc=TRUE))) +
+#Use geom_segment for lollipop graph
+  geom_segment(
+    aes(x = 0,
+        y=fct_reorder(Movie, actress_age, desc=TRUE),
+        xend = actress_age,
+        yend = fct_reorder(Movie, actress_age, desc=TRUE)),
+    color = "gray50") +
+  geom_point() +
+#Add labels
+  labs(x="Actress age", y="Movie",
+       title = "Actress ages in movies",
+       subtitle = "for R for Journalists class",
+       caption = "Data from Vulture.com and IMDB") +
+  theme_minimal() +
+# Add text, remove borders/grids
+  geom_text(aes(label=actress_age), hjust=-.5) +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_blank(),
+        axis.text.x = element_blank())
+
+#Save
+
+ggsave("actress_ages_adjusted.png", width=20, height=30, units="cm")
+
+
+#Create horizontal bar plot with reordered bars
+flights_with_airline_names %>% count(name) %>%
+  mutate(name = fct_reorder(name, n)) %>%
+  ggplot(aes(name, n)) + geom_col() +
+  coord_flip()
+
+#Pick top 10 in category, lump everything else into the "other" category
+flights_with_airline_names %>%
+  mutate(name=fct_lump(name, n=10)) %>%
+  count(name) %>%
+  mutate(name = fct_reorder(name, n)) %>%
+  ggplot(aes(name, n)) + geom_col() + coord_flip()
+
+#Scales
+#Axes:
+
+scale_x_continuous()
+scale_y_continuous()
+scale_x_discrete()
+scale_y_discrete()
+
+#Colors
+scale_color_continuous()
+scale_color_manual()
+scale_color_brewer()
+
+#Fill
+
+scale_fill_continuous()
+scale_fill_manual()
+
+scale_fill_manual(values=c("aquamarine", "darkorchid", "deepskyblue2", "lemonchiffon2", "orange", "peachpuff3", "tomato"))
+scale_fill_brewer(palette="Pastel1")
+#https://learnr.wordpress.com/2009/04/15/ggplot2-qualitative-colour-palettes/
+#https://www.datanovia.com/en/blog/top-r-color-palettes-to-know-for-great-data-visualization/
+
+#Annotate
+geom_hline(yintercept=50, color="red") +
+  annotate("text", x=40, y=51, label="Random text for some reason", color="red")
+####Mapping, Tigris, Census API####
+
+#Libraries needed: viridis, tigris, aptheme, sf, ggplot2, cowplot, rmapshaper, ggrepel
+
+#Make map of US with Albers projection using the Tigris "states" function
+us_states <- states(cb = TRUE, resolution = "20m") %>%
+  shift_geometry()
+
+#Join map with other data and plot choropleth map
+us_states = left_join(us_states, states, by=c("GEOID"="id"))
+ggplot(us_states) +
+  geom_sf(aes(fill=all_ela1922), color=NA) +
+  scale_fill_viridis() +
+  labs(title="States with biggest changes in reading scores", subtitle="Change from 2019 to 2022", fill='Change in grade levels')
+
+#To make a map in the AP Style, add theme_ap():
+  theme_ap() + #Or theme_void
+  theme(legend.position = 'right',
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid.major = element_blank(),
+        legend.title = element_text())
+
+#Create map of districts in a state, simplify with Mapshaper, and save a GeoJSON:
+al_districts <- school_districts(cb = TRUE, state="AL")
+al_districts = al_districts %>% ms_simplify(keep = 0.001)
+st_write(al_districts, "al_districts.geojson")
+
+
+
