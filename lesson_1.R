@@ -109,7 +109,7 @@ View(df)
 #You can select a column by typing the name of the dataframe, then $, then the column name
 df$last
 
-#You can also select my number. The format is: df[rownumber, columnnumber]
+#You can also select by number. The format is: df[rownumber, columnnumber]
 #Example: Row 1, Column 2
 df[1,2]
 
@@ -122,7 +122,7 @@ df[3]
 df['org']
 df$org
 
-#To get everything EXCEPT row 3:
+#To get everything EXCEPT column 3:
 df[-3]
 #Everything EXCEPT row 1:
 df[-1,]
