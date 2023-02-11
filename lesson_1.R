@@ -102,7 +102,7 @@ df = data.frame(first = first_names,
                 zip_code = zips,
                 uses_mac = mac_users)
 
-#I don't want to look at this dataframe in the console. Let's take a closer View()!
+#I don't want to look at this dataframe in the console. Let's take a closer View()! You can also click on "df" in th environment pane.
 
 View(df)
 
@@ -256,7 +256,7 @@ glimpse(sc21)
 
 
 #There are some useful notes at the bottom. You could write these down wherever you're keeping the notes for your story, or write the note as a comment. But, we don't need them for our analysis, so we're going to get rid of them.
-#drop_na() will remove all rows that contain any NA values.
+#drop_na() will remove all rows that contain *any* NA values.
 
 sc21 = drop_na(sc21)
 
@@ -271,7 +271,7 @@ sc21$total_whites = sc21$`WHITE MALES` +
 #Now calculate the percentage of teachers who are white. Divide the number of white teachers by the total number of teachers then multiply by 100.
 sc21$pct_white = sc21$total_whites/sc21$`TOTAL NUMBER OF TEACHERS`*100
 
-#Do the same thing as above for another race or gender.
+#Calculate percent (race/gender) for another race or gender.
 
 
 
@@ -290,11 +290,17 @@ sc21 = read_excel("./data/sc_teacher_demographics/SOUTH CAROLINA TEACHERS BY RAC
   mutate(total_whites = `WHITE MALES` + `WHITE FEMALES` + `WHITE GENDER NOT REPORTED`,
          pct_white = total_whites/`TOTAL NUMBER OF TEACHERS`*100)
 
-sc21 %>% View()
+sc21 %>% View() #Same as View(sc21)
 
-#Tidyverse also allows us to more easily grab rows using the slice() function. Examples:
-#Grab rows 2 to 5
+#Tidyverse also allows us to grab rows using the slice() function. Examples: grab rows 2 to 5
+#Base R way
+sc21[2:5,]
+
+#Tidyverse way
 sc21 %>% slice(2:5)
+
+#It's not really shorter, but it's easier to read and understand.
+
 #Grab the first 10 rows
 sc21 %>% slice_head(n=10)
 #Guess how to grab the last 10 rows

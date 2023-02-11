@@ -15,9 +15,15 @@ library(readxl)
 la22 = read_excel("./data/louisiana_enrollment/oct-2022-multi-stats-(total-by-site-and-school-system).xlsx", sheet=2, skip=5)
 
 #Filter the data so that it only includes schools that are run by the FirstLine Schools nonprofit
-la22 %>% filter(Nonprofit == "FirstLine Schools, Inc.")
+la22 %>%
+  filter(Nonprofit == "FirstLine Schools, Inc.")
 #Notice that we are using TWO equal signs. Don't confuse with the assignment operator which is ONE equal sign
 #Firstline Schools, Inc. has to be in quotation marks because it is a string
+
+#Let's say we want every school EXCEPT FirstLine schools. != means "does not equal"
+#Note that this will also get rid of all schools that have NA under "Nonprofit"
+la22 %>%
+  filter(Nonprofit != "FirstLine Schools, Inc.") %>% View()
 
 #Filter for the school that has the Site Code 026075
 la22 %>% filter(SiteCd == "026075")
@@ -26,7 +32,7 @@ la22 %>% filter(SiteCd == "026075")
 
 
 
-#Filter OUT the statewide total
+#Filter OUT the statewide total.
 
 
 
@@ -39,11 +45,17 @@ la22 %>% filter(Kindergarten > 200)
 # >= more than or equal to
 # <= less than or equal to
 
+#Filter for schools with fewer than 100 kindergarteners
+
+
+
+
+
 #Filter for only schools in New Orleans (which has Parish Code 36)
 la22 %>% filter(`Parish Code` == 36)
 #Parish Code has to be in tick marks (NOT quote marks) because we are calling a column name with a space in it.
 
-#Fiter for schools that are more than 30% students with limited-English proficiency (LEP)
+#Filter for schools that are more than 30% students with limited-English proficiency (LEP)
 la22 %>% filter(`%LEP` > 0.3)
 #R doesn't like the % sign to be in column names either
 
@@ -59,7 +71,7 @@ colnames(la22)
 la22 %>% filter(Parish.Code != 36)
 
 
-#Filter for schools that are NOT in Jefferson Parish
+#Filter for schools that are NOT in Jefferson Parish (parish code 26)
 
 
 
@@ -74,12 +86,15 @@ la22 %>% filter(Parish.Code == 36) %>% count(Nonprofit) %>%
 la22 %>% filter(Parish.Code == 36) %>% count(Nonprofit) %>%
   arrange(-n) %>% View()
 
-#Filter for schools that are in New Orleans AND a Type 1 charter
+
+#You can combine multiple filters with and/or operators
+#Filter for schools that are in New Orleans AND a Type 1 charter with the "&" operator
 la22 %>% filter(Parish.Code == 36 & Charter.Type == "Type 1")
 
-#Filter for schools that are in New Orleans OR a Type 1 charter
+#Filter for schools that are in New Orleans OR a Type 1 charter with the "|" operator
 la22 %>% filter(Parish.Code == 36 | Charter.Type == "Type 1")
 
+#Use %in% to filter based on a list
 #Filter for schools in the New Orleans suburbs
 suburbs = c("Jefferson Parish", "St. Bernard Parish", "St. Tammany Parish", "Plaquemines Parish")
 la22 %>% filter(School.System.Name %in% suburbs)
@@ -95,16 +110,15 @@ la22 %>% filter(School.System.Name %in% suburbs) %>%
 
 
 #Filter for schools with more than 80 and fewer than 100 kindergarteners
-la22 %>% filter(Kindergarten > 80 & Kindergarten <100)
+la22 %>% filter(Kindergarten > 80 & Kindergarten <100) %>% View()
 
 
 #Filter for all rows where the school has "Elementary School" in the name
-
-#To do this, we use str_detect which detects a pattern within a string. It returns TRUE if the pattern is detected or FALSE if it is not.
+#We use str_detect which detects a pattern within a string. It returns TRUE if the pattern is detected or FALSE if it is not.
 str_detect(string=la22$SiteName, pattern="Elementary School")
 
 #When combined with filter, it keeps all rows that returned a TRUE value
-la22 %>% filter(str_detect(SiteName, "Elementary School"))
+la22 %>% filter(str_detect(SiteName, "Elementary School")) %>% View()
 
 #Arrange schools by number of kindergartners, then find the top 5 schools with the most Kindergarteners
 
@@ -243,7 +257,8 @@ df %>% mutate(first = toupper(first),
 la22 %>% mutate(early_childhood_total = PreK + Kindergarten + Grade1) %>%
   select(SiteName, PreK:Grade1, early_childhood_total)
 
-#rowSums() is a function that sums values in a row and across() is a function that allows you to apply a function to several columns -- similar syntax as select()
+#Add a column for the K-8 total
+#rowSums() is a function that sums values in a row and across() is a function that allows you to apply a function to several columns.
 
 #Add a column for total enrollment in grades K-8
 la22 %>% mutate(total_k8 = rowSums(across(Kindergarten:Grade12))) %>%
@@ -252,8 +267,10 @@ la22 %>% mutate(total_k8 = rowSums(across(Kindergarten:Grade12))) %>%
 #Add a column for total enrollment in grades 9-12
 
 
+
 #Add a column for percent minority
-la22 %>% mutate(pct_minority = Minority/Total.Students * 100)
+la22 %>% mutate(pct_minority = Minority/Total.Students * 100) %>%
+  select(SiteName, pct_minority)
 
 
 
@@ -265,9 +282,10 @@ la22 %>% mutate(pct_minority = Minority/Total.Students * 100)
 #Ifelse() is similar to the =IF formula in Excel
 la22 %>% mutate(predominant_gender = ifelse(test = X.Female >= 0.5,
                                             yes = "Female",
-                                            no = "Male"))
+                                            no = "Male")) %>%
+  select(SiteName, X.Female, predominant_gender)
 
-#Normally this is written in a shorter format
+#Normally this is written in a shorter format, like like =IF in Excel.
 la22 %>% mutate(predominant_gender = ifelse(X.Female >= 0.5, "Female", "Male"))
 
 #Use case_when to easily add columns based on multiple possible if/else conditions. NO MORE NESTED IF STATEMENTS! EVER!!
@@ -276,7 +294,7 @@ la22 %>% mutate(predominant_gender = case_when(
   X.Female > 0.5 ~ "Female",
   X.Female == 0.5 ~ "Equally Male and Female",
   TRUE ~ "Male"
-  )) %>% select(SiteName, X.Female, X.Male, predominant_gender)
+  )) %>%  select(SiteName, X.Female, X.Male, predominant_gender)
 
 ##TRUE here means "in all other cases."
 #We could also write: X.Male > 0.5 ~ "Male"
@@ -306,12 +324,23 @@ la22 %>% mutate(school_type = case_when(
 
 
 
-#Use ntile() to classify schools into quartiles based on the percent of students who are economically disadvantaged. Schools in quartile 1 will be the least economically disadvantaged and schools in quartile 4 will be the most economically disadvantaged.
-#Use the ntile() function to group schools into quartiles (n=4), quintile (n=5), deciles (n=10), etc.
-la22 %>% select(SiteName, Parish.Code, pct_disadvantaged = ED.) %>%
-  mutate(quartile = ntile(pct_disadvantaged, n=4)) %>%
-  arrange(pct_disadvantaged) %>%
+#Use ntile() to classify schools into quartiles based on school size. Quartile 1 will have the 25% smallest schools in Louisiana and Quartile 4 will have the 25% largest schools in Louisiana.
+
+la22 %>% select(SiteName, Parish.Code, Total.Students) %>%
+  mutate(quartile = ntile(Total.Students, n=4)) %>%
+  arrange(Total.Students) %>%
   View()
+
+#The ntile() function can also group variables into quintiles (n=5), deciles (n=10), percentiles (n=100), etc.
+
+#Assign schools to quartiles based on the percent of students who are disadvantaged, relative to the state as a whole
+la22 %>% select(SiteName, School.System.Name, Parish.Code, ED.) %>%
+  mutate(quartile = ntile(ED., n=4)) %>%
+  arrange(ED.) %>%
+  View()
+
+#Quartile 1 represents the least economically disadvantaged schools and quartile 4 represents the most economically disadvantaged schools.
+
 
 # Group_by() and Summarize() ####
 #You use group_by before another function, to specify that you would like that function to be applied within specific groups.
@@ -324,13 +353,15 @@ la22 %>% group_by(Parish.Code) %>% slice_sample(n=1)
 
 
 
-#Previously, we assigned districts to quartiles based on how they ranked within the state as a whole. We can use group_by to instead assign districts to quartiles based on how they rank within their parish.
-
-la22 %>% select(SiteName, School.System.Name, Parish.Code, pct_disadvantaged = ED.) %>%
+#Previously, we assigned districts to quartiles based on how they ranked within the state as a whole.
+#We can use group_by to instead assign districts to quartiles based on how they rank within their parish.
+#Now assign schools to quartiles relative to the PARISH they're in
+la22 %>% select(SiteName, School.System.Name, Parish.Code, ED.) %>%
   group_by(Parish.Code) %>%
-  mutate(quartile = ntile(pct_disadvantaged, n=4)) %>%
-  arrange(pct_disadvantaged) %>%
+  mutate(quartile = ntile(ED., n=4)) %>%
+  arrange(ED.) %>%
   View()
+
 
 #Schools in quartile 1 are now the least economically disadvantaged IN THEIR PARISH. Schools in quartile 4 will be the most economically disadvantaged in their parish.
 
@@ -345,6 +376,7 @@ la22_quartiles = la22 %>% select(SiteName, School.System.Name, Parish.Code, pct_
 
 
 #Summarize(): This is like pivot tables in Excel. Use it to create a new table that gives you summary details about the data.
+#median() gives you the median, mean() gives you the average, n() gives you the number of observations
 
 la22 %>% summarize(median_pct_disadvantaged = median(ED.),
                    average_pct_disadvantaged = mean(ED.),
@@ -372,7 +404,7 @@ la22 %>% group_by(School.System.Name) %>%
 
 
 
-#Find the number of American Indian students and Black in each school system
+#Find the number of American Indian students and Black students in each school system
 
 la22 %>% group_by(School.System.Name) %>%
   summarize(amind = sum(AmInd),
@@ -389,13 +421,14 @@ la22 %>% group_by(School.System.Name) %>%
 
 #Put it all together: select school name, parish code, kindergarten, Nonprofit and percent disadvantaged; filter for New Orleans; mutate to multiple percent_disadvantaged by 100; group_by nonprofit; summarize total kindergarten enrollment and median percent disadvantaged for each nonprofit group; arrange by kindergarten enrollment (largest on top)
 
-la22 %>% select(SiteName, Parish.Code, Kindergarten, Nonprofit, pct_disadvantaged = ED.)
-# filter(Parish.Code == 36)
-# mutate(pct_disadvantaged = pct_disadvantaged * 100)
-# group_by(Nonprofit)
-# summarize(total_kinder = sum(Kindergarten),
-#            median_ed = median(pct_disadvantaged))
-# arrange(-total_kinder)
+la22 %>% select(SiteName, Parish.Code, Kindergarten, Nonprofit, ED.) %>%
+ filter(Parish.Code == 36) %>%
+ mutate(pct_disadvantaged = ED. * 100) %>%
+ group_by(Nonprofit) %>%
+ summarize(total_kinder = sum(Kindergarten),
+            median_ed = median(pct_disadvantaged)) %>%
+ arrange(-total_kinder) %>%
+  View()
 
 #Challenge: Come up with your own code that incorporates each of the stupendous six functions
 
@@ -423,17 +456,21 @@ merged = left_join(la22, grades, by=c("SiteCd"="site_code"))
 #A right_join will do the reverse
 merged = right_join(la22, grades, by=c("SiteCd"="site_code"))
 
-#A full_join will keep all rows on both sides
-merged = full_join(la22, grades, by=c("SiteCd"="site_code"))
-
 #An inner_join will only keep the rows that both sides have in common
 merged = inner_join(la22, grades, by=c("SiteCd"="site_code"))
 
+#A full_join will keep all rows on both sides
+merged = full_join(la22, grades, by=c("SiteCd"="site_code"))
+
 #An anti_join will only keep the rows that both sides DON'T have in common
+anti_join(grades, la22, by=c("site_code"="SiteCd"))
 
-merged = anti_join(la22, grades, by=c("SiteCd"="site_code"))
+anti_join(la22, grades, by=c("SiteCd"="site_code"))
 
-merged = anti_join(grades, la22, by=c("site_code"="SiteCd"))
+
+
+# Binding data
+# You join data in order to bring in new columns that didn't exist in your first dataframe. However, what if you want to combine two dataframes with the same columns?
 
 #The federal government has data on the number of 3-5-year-olds in special education and the number of 6-21-year-olds receiving special education services under the Individuals with Disabilities Education Act (IDEA).
 

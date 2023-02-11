@@ -32,7 +32,10 @@ filepath = "./data/private_enrollment/DE_fall2021_private_homeschool_enrollment.
 
 pdf_scrape = extract_tables(file=filepath)
 
-de = pdf_scrape[[5]] %>% as_tibble() %>% select(grade=V1, private_enrollment=V7) %>% slice(3:18)
+de = pdf_scrape[[5]] %>%
+  as_tibble() %>%
+  select(grade=V1, private_enrollment=V7) %>%
+  slice(3:18)
 de['year_by_fall_date'] = str_extract(filepath,"\\d{4}")
 
 filepath = "./data/private_enrollment/DE_fall2020_private_homeschool_enrollment.pdf"
