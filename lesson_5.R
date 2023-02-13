@@ -14,9 +14,6 @@ options(java.parameters = "-Xmx8000m")
 
 library(tidyverse)
 library(tabulizer)
-#library(readr)
-#library(readxl)
-#library(wordstonumbers)
 
 
 # Purpose of this exercise: scrape PDF data on private school enrollment by grade from five states (Delaware, Florida, Maryland, Nebraska, Nevada). Clean each dataframe so that grades are labeled in a similar  way, then bind all the dataframes together. I wrote this code for a story where I had to see how much private school enrollment had changed in various states.
@@ -403,7 +400,7 @@ st_write(al_districts, "al_districts.geojson")
 # Scraping websites ####
 
 # Scraping a website allows us to programmatically collect the information we see on the page. It's the same as going through the website and writing everything manually into a spreadsheet, but we get a computer to do the task for us instead.
-# There is no one-size-fits-all guide for scraping because every single website is different and therefore requires a different strategy. The following guide lists just a few simple examples.
+# There is no one-size-fits-all guide for scraping because every single website is different and therefore requires a different strategy. The following guide lists just a few examples.
 
 # IMPORTANT: Make sure you're allowed to scrape a website before you do it, especially if it is a commercial site which may have proprietary data. Some websites consider scraping to be a violation of their Terms of Service. LinkedIn and Facebook have both taken legal actions against companies that scraped their data for commercial gain. I have not heard of a case where a journalist has been sued for web-scraping, but you could have your IP blocked.
 # A scraper that makes too many requests of a web server within a very short time period could also be blocked because it might be seen as a hacking attempt
@@ -414,7 +411,7 @@ st_write(al_districts, "al_districts.geojson")
 #Very frequently, websites hide their data behind the scenes. You can download their data directly by inspecting the webpage. It just takes some snooping to find out where it's hidden.
 #Example 1:
 #Go to https://edopportunity.org/recovery/#/map/
-#Right click on the page and select "Inspect page" to see the inspection pane
+#Right click on the page and select "Inspect page" to see the inspection pane. (Note: these instructions may differ slightly for different browsers. I used Chrome.)
 #At the top of the inspection pane you'll see a header that says Elements, Console, Sources, Network, etc. Click on "Network" (if you don't see it, click the >> symbol to see more tabs.)
 #Click on "Fetch/XHR." This will help you find what data sources the webpage is fetching to populate the map.
 #Refresh the page.
@@ -436,7 +433,7 @@ st_write(al_districts, "al_districts.geojson")
 library(jsonlite)
 house = fromJSON("./data/georgia_house.json")
 View(house)
-#Save as CSV (update name to reflect which session year you're scraping)
+#Uncomment to save as CSV (update name to reflect which session year you're scraping)
 #to_csv(house,"georgia_house_2023_2024.csv")
 
 #The Senate can be scraped the same way: https://www.legis.ga.gov/members/senate
@@ -490,7 +487,7 @@ tea_scrape = function(district_code) {
   print(paste0("scraping ", url))
   webpage = read_html(url)
 
-  tables <- html_nodes(webpage, "table") %>%
+  tables = html_nodes(webpage, "table") %>%
     html_table()
   budget = tables[[2]]
 
@@ -502,6 +499,7 @@ tea_scrape = function(district_code) {
   return(budget)
 }
 
+budget = tea_scrape("057905")
 
 district_codes = c("101912", "057905", "031901")
 
@@ -519,4 +517,13 @@ for (district_code in district_codes) {
 
 View(all_budgets)
 
+#Save you are only interested in a few of the rows
+
+important_categories = c("Local Property Tax from M&O (excluding recapture)", "State Operating Funds", "Local Property Tax Recaptured")
+
+state_local = all_budgets %>% filter(category %in% important_categories)
+
+#Uncomment below if you want to save
 #write_csv(all_budgets, "texas_financial_reports.csv")
+#write_csv(state_local, "texas_financial_reports_state_local.csv")
+

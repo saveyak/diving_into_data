@@ -28,6 +28,11 @@ la22 = read_excel("./data/louisiana_enrollment/oct-2022-multi-stats-(total-by-si
 
 colnames(la22) = make.names(colnames(la22))
 
+#Find average number of girls per school in each district
+la22 %>% mutate(girls = X.Female * Total.Students) %>%
+  group_by(School.System.Name) %>% summarize(mean(girls)) %>%
+  arrange(-`mean(girls)`)
+
 #Remember that before we summarized enrollment by race for Black and American Indian students. This is how we would do it for every race:
 
 enrollment_by_race = la22 %>% group_by(School.System.Name) %>%

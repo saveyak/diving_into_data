@@ -146,8 +146,6 @@ enr_18 = percent_by_race(enr_18)
 
 # Answer questions about school fights, shootings, school staff, restraint, suspensions ####
 
-#SKIP TO STAFF
-
 #How many school fights happened in 2017/2018?
 
 offenses_18 = read_csv('./data/crdc_201718_Public_Use_Files/Data/SCH/CRDC/CSV/Offenses.csv') %>%
@@ -172,7 +170,6 @@ sum(staff_18$SCH_FTETEACH_TOT)
 #Find total counselors (SCH_FTECOUNSELORS) and law enforcement officers (SCH_FTESECURITY_LEO)
 
 
-#SKIP TO SUSPENSIONS
 #How many incidents of physical restraint occurred?
 
 rs_18 = read_csv('./data/crdc_201718_Public_Use_Files/Data/SCH/CRDC/CSV/Restraint and Seclusion.csv') %>%
@@ -276,6 +273,13 @@ risk_ratio = function(race, df) {
 
   risk_ratio = race_risk/wh_risk
   #Divide the risk of suspension for students of a particular race by the risk for white students
+
+  print(race)
+  print(paste("total students of that race suspended:", sum(df[oos], na.rm=T) ))
+  print(paste("total students of that race:", sum(df[enr], na.rm=T)))
+
+  print(paste("total White students suspended:",  sum(df$oos_WH, na.rm=T) ))
+  print(paste("total White students:",sum(df$WH_enr, na.rm=T)))
 
   return(risk_ratio)
   #You must always end functions by returning an output. If you don't specify what you want the function to give you at the end, you'll get nothing.
