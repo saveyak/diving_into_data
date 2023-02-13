@@ -23,8 +23,12 @@
 #You give it a name, then assign it a value using the assignment operator
 #The assignment operator can be = or <-
 
-my_age = 31
+# THIS IS A COMMENT
+
+my_age = 100
 my_age_in_dog_years = my_age*7 #Multiply your age by 7
+
+
 
 #Can also be written this way:
 #my_age <- 31
@@ -34,7 +38,7 @@ my_age_in_dog_years
 #Go up and edit my_age to a different number. What happens to my_age_in_dog_years?
 
 #You can do whatever math you want. Addition, subtraction, etc. Run this code or type it in the console.
-100*7
+what_is_100_times_7 = 100*7
 81/7
 81%%7 #This is a modulo -- gives you the remainder of division
 8+8
@@ -55,22 +59,31 @@ toupper(my_first_name)
 
 #Guess what you need to do to write your first name in lowercase.
 
-
+tolower(my_first_name)
 
 
 #A vector is a list of multiple things. It always starts with the letter "c" for "combined."
 first_names = c("Ty", "Sami", "Mikhail", "Mirtha", "Camille")
+
+first_names
+
 last_names = c("Tagami", "Edge", "Zinshteyn", "Donastorg", "Phillips")
 organizations = c("The Atlanta Journal-Constitution", "The Oregonian", "Calmatters", "The Plug", "Texas Public Radio")
+
 states = c("Georgia", "Oregon", "California", "Georgia", "Texas")
+
+
 ages = c(105, 7, 62, 33, 41.5)
 zips = c(30030, 97202, 90036, 30307, 78222)
+
 mac_users = c(FALSE, TRUE, TRUE, TRUE, FALSE)
 
 #Notice the last vector is TRUE or FALSE. That's what's known as a logical. More on that later.
 
 #You can grab the first item in a vector by the writing the name of the name of the vector followed by [1]
 first_names[1]
+
+first_names[2]
 
 #The second item is [2], third is [3], etc.
 ages[2]
@@ -80,19 +93,33 @@ length(states)
 
 #Grab the third item on the list of organizations
 
+organizations[3]
+
 
 
 
 #Grab the last item on the list of ages
-
+ages[5]
 
 
 
 #You probably put age[5]. What if you weren't sure how many items were in the list? Is there another way to get the last item in the list using length()?
 
+#Concise way
+ages[length(ages)]
+
+#Less concise way
+#How many items are on the list?
+
+number_of_items_on_list = length(ages)
+ages[number_of_items_on_list]
+
+
 
 
 #You can put multiple vectors together into a dataframe, which is basically a spreadsheet.
+
+#data.frame()
 
 df = data.frame(first = first_names,
                 last = last_names,
@@ -128,16 +155,18 @@ df[-3]
 df[-1,]
 
 
-#Give me everything in column 4
 
+#Give me everything in column 4
+df$state
+df[4]
 
 
 #Give me row 2, column 2
-
+df[2,2]
 
 
 #Give me everything in row 5
-
+df[5,]
 
 
 #To find out the number of rows, use the function nrow() and ncol()
@@ -147,14 +176,15 @@ ncol(df)
 
 #Give me everything in the last row, using nrow()
 
-
+df[nrow(df),]
 
 #Give me everything EXCEPT the last row
 
-
+df[-nrow(df),]
+df[-5,]
 
 #To grab multiple columns, you can put in a number range:
-df[2:3]
+df[2:4]
 
 #What if you need to grab columns 1, 2, and 5?
 df[c(1:2, 5)]
@@ -238,7 +268,7 @@ sc21 = read_excel("./data/sc_teacher_demographics/SOUTH CAROLINA TEACHERS BY RAC
 
 #If this is a pain to type out, remember that you can copy and paste the name of the Excel spreadsheet from the list of files. How do you get the list of files in sc_teacher_demographics again?
 
-
+list.files("./data/sc_teacher_demographics/")
 
 
 
@@ -247,10 +277,12 @@ sc21 = read_excel("./data/sc_teacher_demographics/SOUTH CAROLINA TEACHERS BY RAC
 #The tidyverse has a nifty function called glimpse() that lets us quickly see all of our columns and what type they are
 glimpse(sc21)
 
+summary(sc21$`WHITE MALES`)
+
 #Dbl stands for double, which is a non-integer number (i.e. a number with decimal points). Int stands for integer, chr for character, lgl for logical. Another important type is a factor which we will explain later.
 
 #Open up sc21 to view in another tab.
-
+view(sc21)
 
 
 
@@ -263,13 +295,13 @@ sc21 = drop_na(sc21)
 
 #Let's say we want a column with the total number of white teachers. We will call this column total_whites.
 #We can make this column simply by using plus signs to add the three columns that count white teachers.
-sc21$total_whites = sc21$`WHITE MALES` +
-  sc21$`WHITE FEMALES` +
-  sc21$`WHITE GENDER NOT REPORTED`
+
+sc21$total_whites = sc21$`WHITE MALES` + sc21$`WHITE FEMALES` + sc21$`WHITE GENDER NOT REPORTED`
+
 #Notice that the column name has to be inside tick marks (NOT a regular quotation mark!). This is because there are spaces in the column name. Later on we will learn how to clean column names so we don't have to deal with this annoying extra step.
 
 #Now calculate the percentage of teachers who are white. Divide the number of white teachers by the total number of teachers then multiply by 100.
-sc21$pct_white = sc21$total_whites/sc21$`TOTAL NUMBER OF TEACHERS`*100
+sc21$pct_white = sc21$total_whites / sc21$`TOTAL NUMBER OF TEACHERS` * 100
 
 #Calculate percent (race/gender) for another race or gender.
 
@@ -290,6 +322,8 @@ sc21 = read_excel("./data/sc_teacher_demographics/SOUTH CAROLINA TEACHERS BY RAC
   mutate(total_whites = `WHITE MALES` + `WHITE FEMALES` + `WHITE GENDER NOT REPORTED`,
          pct_white = total_whites/`TOTAL NUMBER OF TEACHERS`*100)
 
+view(sc21)
+
 sc21 %>% View() #Same as View(sc21)
 
 #Tidyverse also allows us to grab rows using the slice() function. Examples: grab rows 2 to 5
@@ -305,15 +339,18 @@ sc21 %>% slice(2:5)
 sc21 %>% slice_head(n=10)
 #Guess how to grab the last 10 rows
 
+bottom_10 = sc21 %>% slice_tail(n=10)
 
 #Grab a random sample of 10 rows
 sc21 %>% slice_sample(n=10)
+
+view(mtcars)
 
 #Grab the 25% of rows that have the lowest share of white teachers
 sc21 %>% slice_min(pct_white, prop=0.25) %>% View()
 
 #Guess how to do the same thing for the 25% of rows with the largest share of white teachers.
-
+sc21 %>% slice_max(pct_white, prop=0.25) %>% View()
 
 
 

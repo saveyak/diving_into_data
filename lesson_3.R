@@ -40,6 +40,8 @@ enrollment_by_race = la22 %>% group_by(School.System.Name) %>%
             multiple = sum(Multiple),
             minority = sum(Minority))
 
+enrollment_by_race %>% View()
+
 #Typing all of this out is very tedious and took 9 lines of code. If we make the data "tidy," it can make summarizing everything much more efficient.
 
 #"Tidy" means every variable gets its own column. And every observation (a fact or figure about that variable) gets its own row.
@@ -81,9 +83,6 @@ enrollment_by_race %>% pivot_wider(names_from = "race", values_from="total") %>%
 #Use pivot_longer() to collapse all the grade columns together, then filter for grade 3.
 
 
-
-
-
 # Clean data on poverty and school finance ####
 
 df = read_csv("./data/district_MO_construction_SY15_to_SY19.csv", skip=6)
@@ -111,12 +110,10 @@ colnames(df) = colnames(df) %>%
 
 #A few column names are still too long. We'll rename them individually with rename().
 
-df = rename(df, State=State_Name_District_Latest_available_year,
+df = df %>% rename(State=State_Name_District_Latest_available_year,
             NCES=Agency_ID_NCES_Assigned_District_Latest_available_year)
 
 #Rename Agency_Name to just Agency
-
-
 
 
 
@@ -132,7 +129,7 @@ df %>% slice(1:20467)
 #But what if we get updated data from the government and it doesn't have exactly 20467 rows anymore?
 
 #Instead, use drop_na() to drop all rows that are NA within the column "NCES."
-df = df %>% drop_na("NCES")
+df = df %>% drop_na(NCES)
 
 
 
@@ -163,12 +160,14 @@ df[df == "†"] <- NA
 
 #Could do the same for the double-cross and hyphen. Another option: mutate columns 8 to the last column to be numeric. All non-numbers will automatically become NAs.
 
-df = df %>% mutate_at(c(8:ncol(df)), as.numeric)
+df = df %>% mutate_at(8:ncol(df), as.numeric)
 
 
 
 #Do we want to include extremely small districts? How do we define small -- 100, 500, 50 students?
 #We probably want districts that have at least 100 students for all five years.
+
+#Take df and then filter if all values X in the columns that start with Total_Students meet this condition: X greater than or equal to 100
 
 df = df %>% filter(if_all(starts_with("Total_Students"), ~ .x >= 100))
 
@@ -204,9 +203,6 @@ poverty = poverty %>% mutate(NCES=paste0(state_fips, district_ID))
 #Create a column called pct_children_in_poverty
 poverty$pct_children_in_poverty = poverty$pop_5to17_in_poverty / poverty$pop_5to17 * 100
 
-#What's an alternate way to do this with mutate()?
-
-
 
 #Join df and poverty
 
@@ -220,11 +216,15 @@ df %>% filter(is.na(pct_children_in_poverty)) %>% count(Agency_Type_District_201
 #Filter to include only the districts where pct_children_in_poverty is NOT N/A
 df = df %>% filter(!is.na(pct_children_in_poverty))
 
+df %>% count(Agency_Type_District_2018_19)
+
 
 # What is the average amount spent in maintenance and construction spending per student per year, by poverty level, over this five-year period?
 
 df$five_year_totals_ops = df %>% select(starts_with("Total_Ops")) %>% rowSums(.)
+
 df$five_year_totals_construction = df %>% select(starts_with("Construction")) %>% rowSums(.)
+
 df$five_year_totals_students = df %>% select(starts_with("Total_Students")) %>% rowSums(.)
 
 #How do we want to characterize poverty? By quartiles, quintiles? For the nation as a whole, or relative to the state each district is in?
@@ -254,7 +254,10 @@ df %>% group_by(state_poverty_quintile) %>%
 
 #Perform the same operation as above, but this time look at construction spending (five_year_totals_construction)
 
-
+df %>% group_by(state_poverty_quintile) %>%
+  summarize(co=sum(five_year_totals_construction, na.rm=T),
+            students=sum(five_year_totals_students, na.rm=T)) %>%
+  mutate(co_per_student = co/students)
 
 
 
@@ -281,14 +284,14 @@ for (f in fruit) {
 #  someFunction(x)
 #}
 
-for (f in fruit) {
-  f = toupper(f)
-  print(paste0("I like to eat ", f,"S!"))
+for (whatever in fruit) {
+  whatever = toupper(whatever)
+  print(paste0("I like to eat ", whatever,"S!"))
 }
 
 #You can also specify a range of numbers
 for (i in 1:5) {
-  print(i)
+  print(i*10)
 }
 
 for (f in fruit[1:5]) {
@@ -303,14 +306,16 @@ for (i in 1:length(fruit)) {
 
 #Same loop but make it print "I ate (i*10) fruits"
 
-
-
+for (i in 1:5) {
+  print(paste("I ate", i*10, "fruits"))
+}
 
 
 #Let's use a for loop for a real-life dataset.
 
 files = list.files("./data/louisiana_enrollment/")
 
+files
 
 #Go through each file in the list of files and print its name.
 for (f in files) {
@@ -377,11 +382,11 @@ for (f in files) {
   filepath = paste0("./data/louisiana_enrollment/", f)
   print(filepath)
   df = read_excel(filepath, skip=5) %>%
-    filter(`School System Name`=="Statewide total" | `School System Name` == "Totals") %>%
+    filter(`School System Name`=="Statewide total" | `School System Name`=="Totals") %>%
     select(PreK:Grade12) %>%
     pivot_longer(PreK:Grade12, names_to="grade", values_to="enrollment") %>%
     filter(grade != "GradeT9")
-  df$census_date = str_extract(filepath,"oct-20..") #extracts "oct-20" and then the two following characters
+  df$census_date = str_extract(filepath,"oct-20..")
 
   la_grades = rbind(la_grades, df)
 }
@@ -459,6 +464,7 @@ la_grades$grade = factor(la_grades$grade, levels=grade_order)
 ggplot(la_grades,aes(x=grade, y=enrollment, fill=census_date)) +
   geom_bar(stat="identity")
 
+
 #It's stacking each year on top of each other instead of stacking them next to each other. Specify position="dodge" to avoid this problem.
 ggplot(la_grades,aes(x=grade, y=enrollment, fill=census_date)) +
   geom_bar(position="dodge", stat="identity")
@@ -528,7 +534,8 @@ la_grades %>% filter(census_date !="oct-2017") %>%
 la_grades %>% filter(census_date !="oct-2017") %>%
   ggplot(aes(fill=census_date, y=yoy_change, x=census_date)) +
   geom_bar(position="dodge", stat="identity") +
-  facet_wrap(~ grade)
+  facet_wrap(~ grade) +
+  coord_flip()
 
 #Click export and then "save as image" to save your chart. If you save it as an SVG, you can then open it in Illustrator and edit it there. You can also use to the ggsave() function to save.
 

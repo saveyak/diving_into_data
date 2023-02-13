@@ -146,6 +146,8 @@ enr_18 = percent_by_race(enr_18)
 
 # Answer questions about school fights, shootings, school staff, restraint, suspensions ####
 
+#SKIP TO STAFF
+
 #How many school fights happened in 2017/2018?
 
 offenses_18 = read_csv('./data/crdc_201718_Public_Use_Files/Data/SCH/CRDC/CSV/Offenses.csv') %>%
@@ -170,6 +172,7 @@ sum(staff_18$SCH_FTETEACH_TOT)
 #Find total counselors (SCH_FTECOUNSELORS) and law enforcement officers (SCH_FTESECURITY_LEO)
 
 
+#SKIP TO SUSPENSIONS
 #How many incidents of physical restraint occurred?
 
 rs_18 = read_csv('./data/crdc_201718_Public_Use_Files/Data/SCH/CRDC/CSV/Restraint and Seclusion.csv') %>%
@@ -278,6 +281,7 @@ risk_ratio = function(race, df) {
   #You must always end functions by returning an output. If you don't specify what you want the function to give you at the end, you'll get nothing.
 
 }
+
 
 
 risk_ratio('BL', oos_18) #Black students were 6.3 times as likely as White students be suspended.

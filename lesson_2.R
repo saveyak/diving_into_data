@@ -15,8 +15,11 @@ library(readxl)
 la22 = read_excel("./data/louisiana_enrollment/oct-2022-multi-stats-(total-by-site-and-school-system).xlsx", sheet=2, skip=5)
 
 #Filter the data so that it only includes schools that are run by the FirstLine Schools nonprofit
+
 la22 %>%
-  filter(Nonprofit == "FirstLine Schools, Inc.")
+  filter(Nonprofit == "FirstLine Schools, Inc.") %>%
+  View()
+
 #Notice that we are using TWO equal signs. Don't confuse with the assignment operator which is ONE equal sign
 #Firstline Schools, Inc. has to be in quotation marks because it is a string
 
@@ -26,14 +29,14 @@ la22 %>%
   filter(Nonprofit != "FirstLine Schools, Inc.") %>% View()
 
 #Filter for the school that has the Site Code 026075
-la22 %>% filter(SiteCd == "026075")
+la22 %>% filter(SiteCd == "026075") %>% View()
 
 #Filter for ONLY the statewide total
-
+la22 %>% filter(SiteName == "Total") %>% View()
 
 
 #Filter OUT the statewide total.
-
+la22 %>% filter(SiteName != "Total") %>% View()
 
 
 
@@ -48,7 +51,7 @@ la22 %>% filter(Kindergarten > 200)
 #Filter for schools with fewer than 100 kindergarteners
 
 
-
+la22 %>% filter(Kindergarten < 100) %>% View()
 
 
 #Filter for only schools in New Orleans (which has Parish Code 36)
@@ -72,7 +75,7 @@ la22 %>% filter(Parish.Code != 36)
 
 
 #Filter for schools that are NOT in Jefferson Parish (parish code 26)
-
+la22 %>% filter(Parish.Code != 26)
 
 
 #Filter and then count how many schools are run by each nonprofit
@@ -84,7 +87,8 @@ la22 %>% filter(Parish.Code == 36) %>% count(Nonprofit) %>%
 
 #Arrange be default puts the smallest values on top. Put a minus sign before the column name to reverse this.
 la22 %>% filter(Parish.Code == 36) %>% count(Nonprofit) %>%
-  arrange(-n) %>% View()
+  arrange(-n) %>%
+  slice(1:10)
 
 
 #You can combine multiple filters with and/or operators
@@ -97,58 +101,72 @@ la22 %>% filter(Parish.Code == 36 | Charter.Type == "Type 1")
 #Use %in% to filter based on a list
 #Filter for schools in the New Orleans suburbs
 suburbs = c("Jefferson Parish", "St. Bernard Parish", "St. Tammany Parish", "Plaquemines Parish")
-la22 %>% filter(School.System.Name %in% suburbs)
+
+la22 %>% filter(School.System.Name %in% suburbs) %>% View()
 
 #Filter for suburbs then arrange by total students -- smallest schools on top
 la22 %>% filter(School.System.Name %in% suburbs) %>%
-  arrange(Total.Students)
+  arrange(Total.Students) %>% View()
 
 #Same thing but with the biggest schools on top
-
+la22 %>% filter(School.System.Name %in% suburbs) %>%
+  arrange(-Total.Students) %>% View()
 
 
 
 
 #Filter for schools with more than 80 and fewer than 100 kindergarteners
-la22 %>% filter(Kindergarten > 80 & Kindergarten <100) %>% View()
+la22 %>% filter(Kindergarten > 80 & Kindergarten < 100) %>% View()
 
 
 #Filter for all rows where the school has "Elementary School" in the name
 #We use str_detect which detects a pattern within a string. It returns TRUE if the pattern is detected or FALSE if it is not.
 str_detect(string=la22$SiteName, pattern="Elementary School")
 
+str_detect(la22$SiteName, "Elementary School")
+
+
 #When combined with filter, it keeps all rows that returned a TRUE value
 la22 %>% filter(str_detect(SiteName, "Elementary School")) %>% View()
 
+
 #Arrange schools by number of kindergartners, then find the top 5 schools with the most Kindergarteners
 
-la22 %>% arrange(-Kindergarten) %>% slice_head(n=5)
+la22 %>% arrange(-Kindergarten) %>%
+  slice(5:1) %>% View()
 
 
 
-#Filter for schools with greater than average number share of students with limited English proficiency (LEP)
+#Filter for schools with greater than average share of students with limited English proficiency (LEP)
 #mean() is used to find the average (note: our data has no NA's; we'll see later how to modify the code when there are NA's)
+
 mean(la22$X.LEP)
 
 la22 %>% filter(X.LEP > mean(X.LEP)) %>% View()
 
 
 #Same as above, but arrange it so schools with the highest share of LEP students are on top
-
+la22 %>% filter(X.LEP > mean(X.LEP)) %>%
+  arrange(desc(X.LEP)) %>%
+  View()
 
 
 
 #Filter for schools that have TWICE the average share of LEP students
 
+la22 %>% filter(X.LEP > 2 * mean(X.LEP)) %>% View()
 
 
 #Filter for schools that are above-average in terms of ED (economically disadvantaged) kids
+# ED.
+
+avg_eco_dis = mean(la22$ED.)
+
+la22 %>% filter(ED. > avg_eco_dis) %>% View()
 
 
-
-
-#Find top 10 schools with highest share of economically disadvantaged kids
-
+#Find all the schools that are 100% economically disadvantaged
+la22 %>% filter(ED. == 1) %>% View()
 
 
 
@@ -158,25 +176,36 @@ la22 %>% filter(X.LEP > mean(X.LEP)) %>% View()
 
 #Select site name and total number of students
 la22 %>% select(SiteName, Total.Students)
-la22 %>% select(5,6)
+la22 %>% select(5:6)
 
 #Select site name and all columns from "AmInd" to "Minority"
 la22 %>% select(SiteName, AmInd:Minority)
 la22 %>% select(5, 9:16)
 
 #Select the last column
-
-
+la22 %>% select(Parish.Code)
+la22 %>% select(ncol(la22))
+la22 %>% select(last_col())
 
 
 #Select everything EXCEPT the site name
 la22 %>% select(-SiteName)
 
-#Select site name, site code, and all the columns showing enrollment in grades K-12
+#Select site name, site code
+la22 %>% select(SiteName, SiteCd)
+
+
+#Select kinder to grade 12
+
+la22 %>% select(Kindergarten:Grade12)
+
+#Select site name, site code, and kinder to grade 12
+
+la22 %>% select(SiteCd, SiteName, Kindergarten:Grade12)
 
 
 #Select all columns from AmInd to Multiple, except HawPI
-
+la22 %>% select(AmInd:Multiple, -HawPI)
 
 
 #Columns can be selected in any order
@@ -191,7 +220,7 @@ la22 %>% select(SiteName, everything())
 
 
 #Select the school name first, then race-related columns, then everything else
-
+la22 %>% select(SiteName, AmInd:Multiple, everything()) %>% View()
 
 
 #Selection helpers allow you to select columns that start with, end with, or contain certain string
@@ -208,12 +237,12 @@ la22 %>% select(contains("X."))
 
 #Find all the columns that contain "male" (or "Male")
 #Note: by defaults selection helpers are case-insensitive unless you add ignore.case=FALSE
-
+la22 %>% select(contains("male"))
 
 
 
 #Select school name and grades K-12, but not GradeT9
-
+la22 %>% select(SiteName, Kindergarten:Grade12, -GradeT9)
 
 
 #You can rename columns at the same time you select them
@@ -223,9 +252,11 @@ la22 %>% select(SiteName, percent_limited_english=X.LEP)
 #The other way to rename columns is with rename()
 #la22 = rename(la22, percent_limited_english=X.LEP)
 
+rename(la22, percent_limited_english=X.LEP)
+
 
 #Select school name, school code, and percent economically-disadvantaged. Come up with a new name for the last column.
-
+la22 %>% select(SiteName, SiteCd, low_income=ED.)
 
 
 
@@ -234,6 +265,8 @@ la22 %>% select(SiteName, percent_limited_english=X.LEP)
 
 # Mutate() ####
 #Mutate allows you to create new columns based on existing columns.
+
+df
 
 #Take our student dataframe from before and add an age_in_dog_years column
 df %>% mutate(age_in_dog_years = age*7)
@@ -248,14 +281,19 @@ df %>% mutate(first = toupper(first))
 df %>% mutate(first = toupper(first),
               last = toupper(last))
 
+#str_to_title() to make it title case
 
-#Add a column where the organization is all lower case
 
+#Add or modify a column where the organization is all lower case
+df %>% mutate(lower_org = tolower(org))
 
 
 #For la22 dataframe, add an Early Childhood Total column for PreK, K and 1st grade
+
 la22 %>% mutate(early_childhood_total = PreK + Kindergarten + Grade1) %>%
   select(SiteName, PreK:Grade1, early_childhood_total)
+
+
 
 #Add a column for the K-8 total
 #rowSums() is a function that sums values in a row and across() is a function that allows you to apply a function to several columns.
@@ -265,7 +303,8 @@ la22 %>% mutate(total_k8 = rowSums(across(Kindergarten:Grade12))) %>%
   select(SiteName, total_k8)
 
 #Add a column for total enrollment in grades 9-12
-
+la22 %>% mutate(total_9_12 = rowSums(across(Grade9:Grade12))) %>%
+  select(SiteName, total_9_12)
 
 
 #Add a column for percent minority
@@ -273,8 +312,6 @@ la22 %>% mutate(pct_minority = Minority/Total.Students * 100) %>%
   select(SiteName, pct_minority)
 
 
-
-#Add a column for the number of females, based on percent female
 
 
 
@@ -305,8 +342,7 @@ la22 %>% mutate(school_size = case_when(
   Total.Students >= 500 & Total.Students < 1000 ~ "Medium",
   TRUE ~ "Large"
 )) %>%
-  arrange(Total.Students) %>%
-  View()
+  select(SiteName, Total.Students, school_size)
 
 #Classify schools as elementary, middle, high schools or other
 
@@ -319,8 +355,13 @@ la22 %>% mutate(school_type = case_when(
 
 #Use case_when to add a column that marks whether a school is located in "New Orleans Proper", "New Orleans Suburbs," or "Elsewhere in Louisiana"
 
+suburbs = c("Jefferson Parish", "St. Bernard Parish", "St. Tammany Parish", "Plaquemines Parish")
 
-
+la22 %>% mutate(location = case_when(
+  Parish.Code == 36 ~ "New Orleans Proper",
+  School.System.Name %in% suburbs ~ "New Orleans Suburbs",
+  TRUE ~ "Elsewhere in Louisiana"
+)) %>% select(School.System.Name, SiteName, location)
 
 
 
@@ -346,12 +387,14 @@ la22 %>% select(SiteName, School.System.Name, Parish.Code, ED.) %>%
 #You use group_by before another function, to specify that you would like that function to be applied within specific groups.
 
 #Get a random sample of four schools
-la22 %>% slice_sample(n=4)
+la22 %>% slice_sample(n=4) %>% select(Parish.Code, SiteName)
 
 #Get a random sample of one school from each parish
-la22 %>% group_by(Parish.Code) %>% slice_sample(n=1)
+la22 %>% group_by(Parish.Code) %>% slice_sample(n=1) %>% select(Parish.Code, SiteName) %>% ungroup()
 
 
+
+#SKIP TO LINE 419 ##
 
 #Previously, we assigned districts to quartiles based on how they ranked within the state as a whole.
 #We can use group_by to instead assign districts to quartiles based on how they rank within their parish.
@@ -401,7 +444,8 @@ la22 %>% group_by(School.System.Name) %>%
 
 #Find average number of students in each school system
 
-
+la22 %>% group_by(School.System.Name) %>%
+  summarize(avg_students = mean(Total.Students))
 
 
 #Find the number of American Indian students and Black students in each school system
@@ -414,25 +458,32 @@ la22 %>% group_by(School.System.Name) %>%
 
 #Find the number of Kindergarten, Grade 1 and Grade 2 students in each parish
 
-
-
+la22 %>% group_by(School.System.Name) %>%
+  summarize(kinder = sum(Kindergarten),
+            first = sum(Grade1),
+            second = sum(Grade2)) %>%
+  arrange(-kinder) %>%
+  View()
 
 
 
 #Put it all together: select school name, parish code, kindergarten, Nonprofit and percent disadvantaged; filter for New Orleans; mutate to multiple percent_disadvantaged by 100; group_by nonprofit; summarize total kindergarten enrollment and median percent disadvantaged for each nonprofit group; arrange by kindergarten enrollment (largest on top)
 
-la22 %>% select(SiteName, Parish.Code, Kindergarten, Nonprofit, ED.) %>%
+kinder_summary = la22 %>% select(SiteName, Parish.Code, Kindergarten, Nonprofit, ED.) %>%
  filter(Parish.Code == 36) %>%
  mutate(pct_disadvantaged = ED. * 100) %>%
  group_by(Nonprofit) %>%
  summarize(total_kinder = sum(Kindergarten),
-            median_ed = median(pct_disadvantaged)) %>%
+            median_ed = median(pct_disadvantaged),
+           total_schools = n()) %>%
  arrange(-total_kinder) %>%
-  View()
+  ungroup()
 
 #Challenge: Come up with your own code that incorporates each of the stupendous six functions
 
-
+la22 %>% filter(str_detect(SiteName, "Detention") |
+                str_detect(SiteName, "Correctional")) %>%
+  select(SiteName, ED.)
 
 
 
@@ -484,6 +535,8 @@ idea_6_to_21 = read_excel("./data/2021-bchildcountandedenvironment-3.xlsx", skip
 
 #First, let's add a column to each dataframe to identify the age rage
 
+#idea_3_to_5 = idea_3_to_5 %>% mutate(age_range = "3-5")
+
 idea_3_to_5$age_range = "3-5"
 idea_6_to_21$age_range = "6-21"
 
@@ -497,7 +550,12 @@ idea = rbind(idea_3_to_5, idea_6_to_21)
 
 fips = read_csv("./data/state_fips.csv")
 
-#Add FIPS code and postal codes to the idea dataframe. Do you want a left, right, inner or full join?
+#Join FIPS code and postal codes to the idea dataframe.
+
+idea = left_join(idea, fips, by=c("State"="Name"))
+
+
+
 
 
 
